@@ -1,0 +1,118 @@
+INFO:     Started server process [63659]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:62626 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62636 - "GET /api/montecarlo?symbol=BTCUSD&interval=1d&bars=365 HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:62655 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62681 - "GET /api/markov?symbol=BTCUSD&interval=1d&bars=365 HTTP/1.1" 200 OK
+Model is not converging.  Current: 757.6809632406603 is not greater than 757.7041000869526. Delta is -0.02313684629234558
+INFO:     127.0.0.1:62715 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1d&bars=365 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63345 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9679449556003 is not greater than 473.977432019789. Delta is -0.009487064188704153
+INFO:     127.0.0.1:63345 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.4899446649158 is not greater than 345.50188830312374. Delta is -0.011943638207924323
+INFO:     127.0.0.1:63345 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63345 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63345 - "OPTIONS /api/backtest HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63345 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9656310432872 is not greater than 473.9750900604766. Delta is -0.009459017189385577
+INFO:     127.0.0.1:63353 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.4880992462099 is not greater than 345.500024863722. Delta is -0.01192561751207677
+INFO:     127.0.0.1:63353 - "GET /api/signal?symbol=BTCUSD&strategy=piggy&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/kelly?symbol=BTCUSD&strategy=piggy HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+INFO:     127.0.0.1:63353 - "POST /api/backtest HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63353 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9656310432872 is not greater than 473.9750900604766. Delta is -0.009459017189385577
+INFO:     127.0.0.1:63353 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.4880992462099 is not greater than 345.500024863722. Delta is -0.01192561751207677
+INFO:     127.0.0.1:63353 - "GET /api/signal?symbol=BTCUSD&strategy=limroy&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/kelly?symbol=BTCUSD&strategy=limroy HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63353 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9656310432872 is not greater than 473.9750900604766. Delta is -0.009459017189385577
+INFO:     127.0.0.1:63353 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.4880992462099 is not greater than 345.500024863722. Delta is -0.01192561751207677
+INFO:     127.0.0.1:63353 - "GET /api/signal?symbol=BTCUSD&strategy=dejavu&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/kelly?symbol=BTCUSD&strategy=dejavu HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63353 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9656310432872 is not greater than 473.9750900604766. Delta is -0.009459017189385577
+INFO:     127.0.0.1:63353 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.4880992462099 is not greater than 345.500024863722. Delta is -0.01192561751207677
+INFO:     127.0.0.1:63353 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63353 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63353 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63590 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=20 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63602 - "GET /api/data?symbol=BTCUSD&interval=1h&bars=200 HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/venv/lib/python3.13/site-packages/hmmlearn/hmm.py:352: RuntimeWarning: invalid value encountered in divide
+  self.means_ = ((means_weight * means_prior + stats['obs'])
+Some rows of transmat_ have zero sum because no transition from the state was ever observed.
+HMM Error: array must not contain infs or NaNs
+INFO:     127.0.0.1:63602 - "GET /api/regime?symbol=BTCUSD&interval=1h&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63602 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1h&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63602 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63602 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63641 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.9609448499913 is not greater than 473.97034839098404. Delta is -0.009403540992764192
+INFO:     127.0.0.1:63641 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.48435176738764 is not greater than 345.4962415434302. Delta is -0.011889776042551148
+INFO:     127.0.0.1:63641 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63641 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63641 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63867 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.95171374772036 is not greater than 473.9610123937185. Delta is -0.009298645998114807
+INFO:     127.0.0.1:63867 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.47693636819963 is not greater than 345.48875766677895. Delta is -0.011821298579320683
+INFO:     127.0.0.1:63867 - "GET /api/signal?symbol=BTCUSD&strategy=piggy&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63867 - "GET /api/kelly?symbol=BTCUSD&strategy=piggy HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+INFO:     127.0.0.1:63867 - "POST /api/backtest HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63867 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.95171374772036 is not greater than 473.9610123937185. Delta is -0.009298645998114807
+INFO:     127.0.0.1:63867 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.47693636819963 is not greater than 345.48875766677895. Delta is -0.011821298579320683
+INFO:     127.0.0.1:63867 - "GET /api/signal?symbol=BTCUSD&strategy=limroy&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63867 - "GET /api/kelly?symbol=BTCUSD&strategy=limroy HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63867 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63867 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.95171374772036 is not greater than 473.9610123937185. Delta is -0.009298645998114807
+INFO:     127.0.0.1:63867 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.47693636819963 is not greater than 345.48875766677895. Delta is -0.011821298579320683
+INFO:     127.0.0.1:63867 - "GET /api/signal?symbol=BTCUSD&strategy=dejavu&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63867 - "GET /api/kelly?symbol=BTCUSD&strategy=dejavu HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63867 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63995 - "GET /api/data?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 473.90322475365406 is not greater than 473.9120317606543. Delta is -0.008807007000257272
+INFO:     127.0.0.1:63995 - "GET /api/regime?symbol=BTCUSD&interval=1d&bars=200 HTTP/1.1" 200 OK
+Model is not converging.  Current: 345.43521712358313 is not greater than 345.4461019198637. Delta is -0.010884796280549836
+INFO:     127.0.0.1:63995 - "GET /api/signal?symbol=BTCUSD&strategy=nova&interval=1d&bars=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63995 - "GET /api/kelly?symbol=BTCUSD&strategy=nova HTTP/1.1" 200 OK
+/Users/testgrid/Documents/Scripts/QUANT/backend/backtest_engine.py:70: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(bt_df, strategy_class, cash=cash, commission=commission)
+Backtest.run:   0%|          | 0/315 [00:00<?, ?bar/s]                                                      INFO:     127.0.0.1:63995 - "POST /api/backtest HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64142 - "GET /api/medallion-matrix?symbol=BTCUSD HTTP/1.1" 404 Not Found
+/opt/homebrew/Cellar/python@3.13/3.13.2/Frameworks/Python.framework/Versions/3.13/lib/python3.13/multiprocessing/resource_tracker.py:277: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/loky-63659-6snn96dn'}
+  warnings.warn(

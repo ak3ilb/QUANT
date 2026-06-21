@@ -1,0 +1,12 @@
+node_modules/
+venv/
+__pycache__/
+*.duckdb
+*.duckdb.wal
+.DS_Store
+.next/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!matrix_results.json
