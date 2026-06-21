@@ -1,0 +1,212 @@
+.container {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.titleGroup h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.titleGroup p {
+  color: var(--text-tertiary);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.controls {
+  display: flex;
+  gap: 16px;
+}
+
+.input {
+  background: #ffffff;
+  border: 2px solid var(--panel-border);
+  color: var(--text-primary);
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+  width: 150px;
+  text-align: center;
+  transition: box-shadow 0.2s;
+}
+
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.topRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  height: 450px;
+}
+
+.glassPanel {
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-radius: 0.75rem;
+  padding: 20px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.glassPanel:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.panelTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panelIcon {
+  color: var(--accent-blue);
+}
+
+.chartContainer {
+  flex: 1;
+  height: calc(100% - 40px);
+}
+
+/* Command Center Grid */
+.matrixGrid {
+  display: grid;
+  grid-template-columns: 150px repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gridHeader {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.strategyLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+}
+
+.gridCell {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.gridCell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+.signalBUY {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.signalSELL {
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.signalHOLD {
+  color: var(--warning);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.confText {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.medallionRow .gridCell {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.medallionRow .strategyLabel {
+  color: var(--accent-blue);
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.regimeTag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.regimeBull { background: #dcfce7; color: var(--success); }
+.regimeBear { background: #fee2e2; color: var(--danger); }
+.regimeSideways { background: #fef3c7; color: var(--warning); }
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.statLabel {
+  color: var(--text-tertiary);
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-primary);
+}
