@@ -14,9 +14,9 @@ from signal_engine import STRATEGIES, SignalEngine
 from data_vault import store_ohlcv, get_ohlcv
 from algorithms.candlestick_patterns import detect_candlestick_patterns
 
-SYMBOLS = ["BTCUSD", "XAUUSD", "NIFTY"]
-TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD", "XAUUSD": "OANDA:XAUUSD", "NIFTY": "NSE:NIFTY"}
-TIMEFRAMES = {"1m": "1", "3m": "3", "5m": "5", "15m": "15", "1h": "60", "4h": "240", "1d": "1D"}
+SYMBOLS = ["BTCUSD"]
+TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD"}
+TIMEFRAMES = {"1h": "60"} # Only extract 1h since we upgraded our execution model
 CDP_URL = "http://localhost:3001"
 
 async def fetch_and_store_live(symbol, tf_label, tv_tf):
@@ -82,17 +82,8 @@ async def compute_matrix():
                 levels = existing_data.get("liquidity_levels", [])
                 
                 for tf_label, tv_tf in TIMEFRAMES.items():
-                    # Determine if we should fetch this timeframe in this loop
-                    should_fetch = False
-                    if tf_label in ["1m", "3m"]:
-                        should_fetch = True
-                    elif tf_label == "5m" and loop_counter % 5 == 1:
-                        should_fetch = True
-                    elif tf_label == "15m" and loop_counter % 15 == 1:
-                        should_fetch = True
-                    elif tf_label == "1h" and loop_counter % 60 == 1:
-                        should_fetch = True
-                    elif tf_label in ["4h", "1d"] and loop_counter % 240 == 1:
+                    # Always fetch our primary trading timeframe to keep pricing live
+                    if tf_label == "1h":
                         should_fetch = True
                         
                     # If we don't have this timeframe at all, force fetch it
@@ -176,6 +167,10 @@ async def compute_matrix():
                     if os.path.exists(tmp_output_file):
                         os.remove(tmp_output_file)
                     print(f"Failed to write json for {symbol}: {e}", flush=True)
+            
+            # Wait 30 seconds before re-calculating the 1h matrix to avoid browser spam
+            time.sleep(30)
+            
         except Exception as e:
             print(f"Main Loop Error: {e}", flush=True)
             time.sleep(1)

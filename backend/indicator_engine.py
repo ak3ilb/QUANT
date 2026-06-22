@@ -14,15 +14,8 @@ class IndicatorEngine:
         if not isinstance(df.index, pd.DatetimeIndex):
             df.index = pd.to_datetime(df.index)
             
-        # Trend
-        df.ta.ema(length=9, append=True)
-        df.ta.ema(length=21, append=True)
-        df.ta.ema(length=50, append=True)
-        df.ta.ema(length=200, append=True)
-        
-        # Momentum
-        df.ta.rsi(length=14, append=True)
-        df.ta.macd(fast=12, slow=26, signal=9, append=True)
+        # Core mathematical prerequisites
+        # Removed retail indicators (EMA, RSI, MACD) to optimize latency
         
         # Volatility
         df.ta.atr(length=14, append=True)

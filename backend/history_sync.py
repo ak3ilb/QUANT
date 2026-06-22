@@ -10,7 +10,7 @@ TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD", "XAUUSD": "OANDA:XAUUSD", "NIFTY": "NS
 class TradingViewHistorySyncer:
     def __init__(self, cdp_url="http://localhost:3001"):
         self.cdp_url = cdp_url
-        self.symbols = ["BTCUSD", "XAUUSD", "NIFTY"]
+        self.symbols = ["BTCUSD"] # Focus only on BTCUSD for backtesting as requested
         self.timeframes = {
             "1m": "1",
             "3m": "3",
@@ -54,13 +54,9 @@ class TradingViewHistorySyncer:
                     
                     if 'bars' in data and len(data['bars']) > 0:
                         df = pd.DataFrame(data['bars'])
-                        # TradingView returns timestamps in seconds or ms. Usually seconds if from bar time.
-                        # Wait, the CDP script might return unix time. Let's check magnitude.
                         if df['time'].iloc[-1] > 20000000000:
-                            # It's ms
                             df['time'] = pd.to_datetime(df['time'], unit='ms')
                         else:
-                            # It's seconds
                             df['time'] = pd.to_datetime(df['time'], unit='s')
                         df.attrs["source"] = data.get("source", "tradingview_cdp")
                         df.attrs["actual_symbol"] = data.get("actualSymbol")
@@ -78,27 +74,24 @@ class TradingViewHistorySyncer:
                     
         print("\nSync cycle complete!")
 
-def run_sync_loop():
+def run_sync_once():
     syncer = TradingViewHistorySyncer()
     
-    while True:
-        try:
-            # Create lock file to pause matrix_worker
-            with open("/tmp/history_sync.lock", "w") as f:
-                f.write("locked")
-            
-            syncer.sync_all()
-            
-        except Exception as e:
-            print(f"Critical sync error: {e}")
-        finally:
-            # Remove lock file when done
-            if os.path.exists("/tmp/history_sync.lock"):
-                os.remove("/tmp/history_sync.lock")
-            
-        # Run every 4 hours (14400 seconds)
-        print(f"[{datetime.now()}] Sleeping for 4 hours...")
-        time.sleep(14400)
+    try:
+        # Create lock file to pause matrix_worker
+        with open("/tmp/history_sync.lock", "w") as f:
+            f.write("locked")
+        
+        syncer.sync_all()
+        
+    except Exception as e:
+        print(f"Critical sync error: {e}")
+    finally:
+        # Remove lock file when done
+        if os.path.exists("/tmp/history_sync.lock"):
+            os.remove("/tmp/history_sync.lock")
+        
+    print(f"[{datetime.now()}] One-time sync complete. Exiting.")
 
 if __name__ == "__main__":
-    run_sync_loop()
+    run_sync_once()

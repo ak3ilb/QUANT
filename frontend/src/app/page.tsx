@@ -6,6 +6,7 @@ import { Activity, Shield, BarChart2, Cpu, Crosshair, Zap, Target } from 'lucide
 import dynamic from 'next/dynamic';
 import SpeedometerGrid from './SpeedometerGrid';
 import PredictionPanel from './PredictionPanel';
+import PaperTraderPanel from './PaperTraderPanel';
 
 const TradingChart = dynamic(() => import('../components/TradingChart'), { ssr: false });
 
@@ -207,6 +208,10 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+        </section>
+
+        <section className={styles.lowerRow}>
+          <PaperTraderPanel />
         </section>
       </main>
     </div>

@@ -27,94 +27,95 @@ class SignalEngine:
         if len(df) < 50:
             return {"strategy": strategy, "action": "HOLD", "confidence": 0}
             
-        current_close = df['close'].iloc[-1]
-        ema_fast = df['EMA_9'].iloc[-1] if 'EMA_9' in df.columns else current_close
-        ema_slow = df['EMA_21'].iloc[-1] if 'EMA_21' in df.columns else current_close
-        ema_50 = df['EMA_50'].iloc[-1] if 'EMA_50' in df.columns else current_close
-        rsi = df['RSI_14'].iloc[-1] if 'RSI_14' in df.columns else 50
-        macd_hist = df['MACDh_12_26_9'].iloc[-1] if 'MACDh_12_26_9' in df.columns else 0
+        current_close = float(df['close'].iloc[-1])
+        active_patterns = str(df['active_patterns'].iloc[-1]).lower() if 'active_patterns' in df.columns else ""
         
+        # Mathematical Invariants
         regime_state = regime.get("current_regime", "Unknown")
-        regime_conf = regime.get("confidence", 0.5)
+        regime_conf = float(regime.get("confidence", 0.5))
+        sde_forecast = float(regime.get("sde_forecast", current_close))
+        curvature = float(regime.get("curvature_value", regime.get("cs_5d", 0)))
+        is_break = bool(regime.get("structural_break", False))
+        berlekamp_up = float(regime.get("berlekamp_up", 0.5))
+        cheeger = float(regime.get("cheeger_invariant", 0.5))
+        p_value = float(regime.get("kernel_p_value", 1.0))
         
-        # Base Prior anchors slightly towards long-term trend
+        # Base Prior anchors strictly at 0.5 (perfect neutrality)
         prior_bull = 0.5
-        if current_close > ema_50:
-            prior_bull = 0.55
-        elif current_close < ema_50:
-            prior_bull = 0.45
+        
+        # Candlestick Confirmation Penalties
+        is_bull_pattern = "bull" in active_patterns or "hammer" in active_patterns or "morning" in active_patterns
+        is_bear_pattern = "bear" in active_patterns or "shooting" in active_patterns or "evening" in active_patterns
             
-        # Evidence 1: Fast Trend (EMA Cross) -> Gentle update
-        if ema_fast > ema_slow:
-            prior_bull = (0.6 * prior_bull) / ((0.6 * prior_bull) + (0.4 * (1-prior_bull)))
-        else:
-            prior_bull = (0.4 * prior_bull) / ((0.4 * prior_bull) + (0.6 * (1-prior_bull)))
-            
-        # Evidence 2: MACD Momentum
-        if macd_hist > 0:
-            prior_bull = (0.6 * prior_bull) / ((0.6 * prior_bull) + (0.4 * (1-prior_bull)))
-        elif macd_hist < 0:
-            prior_bull = (0.4 * prior_bull) / ((0.4 * prior_bull) + (0.6 * (1-prior_bull)))
-
-        # Evidence 3: Regime
-        if regime_state == "Bull":
-            adj_conf = 0.5 + (regime_conf * 0.2) # Max 0.7 impact
-            prior_bull = (adj_conf * prior_bull) / ((adj_conf * prior_bull) + ((1-adj_conf) * (1-prior_bull)))
-        elif regime_state == "Bear":
-            adj_conf = 0.5 + (regime_conf * 0.2)
-            prior_bull = ((1-adj_conf) * prior_bull) / (((1-adj_conf) * prior_bull) + (adj_conf * (1-prior_bull)))
-            
-        # Evidence 4: Strategy logic
         action = "HOLD"
         
-        if strategy == "nova": # Momentum Breakout
-            if prior_bull > 0.65 and rsi < 75 and ema_fast > ema_slow:
-                action = "BUY"
-            elif prior_bull < 0.35 and rsi > 25 and ema_fast < ema_slow:
-                action = "SELL"
+        # Strategy 1: Nova (Momentum Breakout -> Ax-Kochen + Chern-Simons)
+        if strategy == "nova":
+            if is_break and curvature > 0:
+                prior_bull = 0.8
+            elif is_break and curvature < 0:
+                prior_bull = 0.2
+            elif curvature > 500: # High upward acceleration
+                prior_bull = 0.65
+            elif curvature < -500:
+                prior_bull = 0.35
                 
-        elif strategy == "piggy": # Mean Reversion
-            if rsi < 30 and regime_state != "Bear":
-                action = "BUY"
-                prior_bull = max(prior_bull, 0.6) 
-            elif rsi > 70 and regime_state != "Bull":
-                action = "SELL"
-                prior_bull = min(prior_bull, 0.4)
+        # Strategy 2: Piggy (Mean Reversion -> Ornstein-Uhlenbeck SDE Divergence)
+        elif strategy == "piggy":
+            # If SDE heavily diverges from current close
+            divergence_pct = ((sde_forecast - current_close) / current_close) * 100
+            if divergence_pct > 0.5 and regime_state != "Bull": # Snap upward
+                prior_bull = 0.75
+            elif divergence_pct < -0.5 and regime_state != "Bear": # Snap downward
+                prior_bull = 0.25
                 
-        elif strategy == "limroy": # Statistical Arbitrage
-            if prior_bull > 0.6 and rsi > 40: action = "BUY"
-            elif prior_bull < 0.4 and rsi < 60: action = "SELL"
-            
-        elif strategy == "dejavu": # HMM Pattern matching
-            if regime_state == "Bull" and rsi < 65: action = "BUY"
-            elif regime_state == "Bear" and rsi > 35: action = "SELL"
-            
-        elif strategy == "medallion": # Master Ensemble
-            curvature = regime.get("curvature_value", regime.get("cs_5d", 0))
-            is_break = regime.get("structural_break", False)
-            berlekamp_up = regime.get("berlekamp_up", 0.5)
-            
-            if is_break:
-                medallion_prior = 0.5
+        # Strategy 3: Limroy (Statistical Arbitrage -> Berlekamp-Massey + Kernel Regression)
+        elif strategy == "limroy":
+            # p_value < 0.05 implies high confidence in the localized kernel
+            if p_value < 0.05:
+                if berlekamp_up > 0.8:
+                    prior_bull = 0.8
+                elif berlekamp_up < 0.2:
+                    prior_bull = 0.2
             else:
-                medallion_prior = prior_bull
+                prior_bull = 0.5 # Too much noise to stat arb
+            
+        # Strategy 4: Dejavu (HMM Pattern Matching + Candlesticks)
+        elif strategy == "dejavu":
+            if regime_state == "Bull":
+                prior_bull = 0.6 + (regime_conf * 0.2)
+            elif regime_state == "Bear":
+                prior_bull = 0.4 - (regime_conf * 0.2)
                 
-            # Chern-Simons Gauge Update
-            if curvature > 0: medallion_prior = min(medallion_prior + 0.1, 0.95)
-            elif curvature < 0: medallion_prior = max(medallion_prior - 0.1, 0.05)
+        # Strategy 5: Medallion (Master Unified Ensemble)
+        elif strategy == "medallion":
+            # Combine all mathematical topology
+            medallion_prior = 0.5
+            if is_break: medallion_prior += 0.15 if curvature > 0 else -0.15
+            if berlekamp_up > 0.8: medallion_prior += 0.1
+            if berlekamp_up < 0.2: medallion_prior -= 0.1
+            if sde_forecast > current_close: medallion_prior += 0.1
+            if sde_forecast < current_close: medallion_prior -= 0.1
             
-            # Berlekamp Update
-            if berlekamp_up == 1: medallion_prior = min(medallion_prior + 0.1, 0.95)
-            elif berlekamp_up == 0: medallion_prior = max(medallion_prior - 0.1, 0.05)
+            # Constrain to strict limits before candlestick adjustment
+            prior_bull = max(0.01, min(0.99, medallion_prior))
+
+        # GLOBAL Candlestick dampener for ALL strategies
+        if is_bull_pattern and prior_bull > 0.5:
+            prior_bull = min(prior_bull + 0.1, 0.99) # Confirm the breakout
+        elif is_bear_pattern and prior_bull > 0.5:
+            prior_bull = 0.5 # Slash bullish confidence due to bear pattern at top
             
-            if medallion_prior > 0.70: action = "BUY"
-            elif medallion_prior < 0.30: action = "SELL"
-            
-            prior_bull = medallion_prior
-                
-        else: # Default
-            if prior_bull > 0.7: action = "BUY"
-            elif prior_bull < 0.3: action = "SELL"
+        if is_bear_pattern and prior_bull < 0.5:
+            prior_bull = max(prior_bull - 0.1, 0.01) # Confirm the breakdown
+        elif is_bull_pattern and prior_bull < 0.5:
+            prior_bull = 0.5 # Slash bearish confidence due to bull pattern at bottom
+
+        # Generate Action from pure math Bayesian posterior
+        if prior_bull >= 0.65:
+            action = "BUY"
+        elif prior_bull <= 0.35:
+            action = "SELL"
             
         actual_confidence = prior_bull if prior_bull >= 0.5 else (1 - prior_bull)
         

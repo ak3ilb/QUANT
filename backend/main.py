@@ -269,6 +269,55 @@ async def get_medallion_matrix(symbol: str = Query("BTCUSD")):
     
 # ─── Control Endpoints ───────────────────────────────────────────────────────
 
+@app.get("/api/paper-ledger")
+async def get_paper_ledger():
+    """Fetch the paper trader ledger from DuckDB."""
+    import duckdb
+    import os
+    try:
+        db_path = os.path.join(os.path.dirname(__file__), 'quant_vault.duckdb')
+        if not os.path.exists(db_path):
+            return {"balance": 100.0, "open_positions": [], "history": []}
+            
+        con = duckdb.connect(database=db_path, read_only=True)
+        
+        # Check if table exists
+        tables = con.execute("SHOW TABLES").df()
+        if 'paper_ledger' not in tables['name'].values:
+            return {"balance": 100.0, "open_positions": [], "history": []}
+            
+        df = con.execute("SELECT * FROM paper_ledger ORDER BY entry_time DESC").df()
+        
+        # Calculate balance
+        balance = 100.0
+        closed = df[df['status'] == 'CLOSED']
+        if not closed.empty:
+            balance += float(closed['pnl_usd'].sum())
+            
+        # Parse output and fix NaT/NaN serialization
+        df = df.fillna("")
+        open_positions = df[df['status'] == 'OPEN'].to_dict(orient="records")
+        
+        # Format datetimes
+        for row in open_positions:
+            if hasattr(row['entry_time'], 'isoformat'):
+                row['entry_time'] = row['entry_time'].isoformat()
+            
+        history = df[df['status'] == 'CLOSED'].head(50).to_dict(orient="records")
+        for row in history:
+            if hasattr(row['entry_time'], 'isoformat'):
+                row['entry_time'] = row['entry_time'].isoformat()
+            if hasattr(row['exit_time'], 'isoformat'):
+                row['exit_time'] = row['exit_time'].isoformat()
+            
+        return {
+            "balance": float(balance),
+            "open_positions": open_positions,
+            "history": history
+        }
+    except Exception as e:
+        return {"error": str(e), "balance": 100.0, "open_positions": [], "history": []}
+
 @app.post("/api/control/symbol")
 async def change_symbol(symbol: str):
     """Change TradingView chart symbol via CDP bridge."""
