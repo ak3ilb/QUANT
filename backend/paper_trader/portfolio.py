@@ -2,6 +2,7 @@ import duckdb
 import os
 import json
 import uuid
+import time
 from datetime import datetime
 
 # Shared vault with the main backend

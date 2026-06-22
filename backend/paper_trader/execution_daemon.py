@@ -50,13 +50,18 @@ def run_execution_engine():
                     should_close, reason = risk_manager.check_stop_loss(position, current_price, confidence)
                     
                     # Also exit if SDE forecast has been reached/crossed (mean reversion satisfied)
+                    # BUT ONLY IF we are actually in profit to cover fees!
                     if not should_close:
                         if position['direction'] == "BUY" and current_price >= sde_forecast:
-                            should_close = True
-                            reason = "SDE Target Reached"
+                            pnl_pct = (current_price - position['entry_price']) / position['entry_price']
+                            if pnl_pct > 0.0025: # 0.25% to clear 0.2% fees + slippage
+                                should_close = True
+                                reason = "SDE Target Reached (In Profit)"
                         elif position['direction'] == "SELL" and current_price <= sde_forecast:
-                            should_close = True
-                            reason = "SDE Target Reached"
+                            pnl_pct = (position['entry_price'] - current_price) / position['entry_price']
+                            if pnl_pct > 0.0025:
+                                should_close = True
+                                reason = "SDE Target Reached (In Profit)"
                             
                     # Exit if signal completely flips
                     if not should_close:
@@ -75,22 +80,26 @@ def run_execution_engine():
                 else:
                     # Entry Algorithm
                     # We enter if Medallion gives a high conviction signal
-                    if action in ["BUY", "SELL"] and confidence >= 0.85:
-                        # Check SDE validity
-                        if action == "BUY" and sde_forecast > current_price:
-                            margin_usd, leveraged_size_usd, qty, fee_usd = risk_manager.calculate_position_size(portfolio.get_balance(), raw_kelly, symbol, current_price)
-                            
-                            if margin_usd > 0:
-                                # Execute Trade
-                                executed_price = risk_manager.apply_slippage(current_price, action)
-                                portfolio.open_position(symbol, action, executed_price, margin_usd, leveraged_size_usd, qty, raw_kelly, confidence, fee_usd)
-                            
-                        elif action == "SELL" and sde_forecast < current_price:
-                            margin_usd, leveraged_size_usd, qty, fee_usd = risk_manager.calculate_position_size(portfolio.get_balance(), raw_kelly, symbol, current_price)
-                            
-                            if margin_usd > 0:
-                                executed_price = risk_manager.apply_slippage(current_price, action)
-                                portfolio.open_position(symbol, action, executed_price, margin_usd, leveraged_size_usd, qty, raw_kelly, confidence, fee_usd)
+                    if action in ["BUY", "SELL"] and confidence >= 0.75:
+                        # FEE-AWARE Expected Value: Ensure target is far enough away to cover 0.22% round-trip costs
+                        expected_move_pct = abs(sde_forecast - current_price) / current_price
+                        
+                        if expected_move_pct > 0.003: # Must expect at least 0.30% move
+                            # Check SDE validity
+                            if action == "BUY" and sde_forecast > current_price:
+                                margin_usd, leveraged_size_usd, qty, fee_usd = risk_manager.calculate_position_size(portfolio.get_balance(), raw_kelly, symbol, current_price)
+                                
+                                if margin_usd > 0:
+                                    # Execute Trade
+                                    executed_price = risk_manager.apply_slippage(current_price, action)
+                                    portfolio.open_position(symbol, action, executed_price, margin_usd, leveraged_size_usd, qty, raw_kelly, confidence, fee_usd)
+                                
+                            elif action == "SELL" and sde_forecast < current_price:
+                                margin_usd, leveraged_size_usd, qty, fee_usd = risk_manager.calculate_position_size(portfolio.get_balance(), raw_kelly, symbol, current_price)
+                                
+                                if margin_usd > 0:
+                                    executed_price = risk_manager.apply_slippage(current_price, action)
+                                    portfolio.open_position(symbol, action, executed_price, margin_usd, leveraged_size_usd, qty, raw_kelly, confidence, fee_usd)
                             
             time.sleep(1) # High frequency polling
             

@@ -60,8 +60,8 @@ export default function Dashboard() {
     };
 
     fetchData();
-    // Ultra-fast CDP polling every 1 second
-    const intervalId = setInterval(fetchData, 1000);
+    // Refresh every 5s — fast enough to feel live, not hammering the API
+    const intervalId = setInterval(fetchData, 5000);
     return () => clearInterval(intervalId);
   }, [symbol]);
 
@@ -74,14 +74,14 @@ export default function Dashboard() {
         </div>
         
         <div className={styles.controls}>
-          <input 
-            type="text" 
+          <select 
             className={styles.input} 
-            defaultValue={symbol}
-            onBlur={(e) => setSymbol(e.target.value.toUpperCase())}
-            onKeyDown={(e) => { if (e.key === 'Enter') setSymbol(e.currentTarget.value.toUpperCase()) }}
-            placeholder="Symbol (BTCUSD)"
-          />
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+          >
+            <option value="BTCUSD">BTCUSD</option>
+            <option value="XAUUSD">XAUUSD</option>
+          </select>
         </div>
       </header>
 

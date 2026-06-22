@@ -15,7 +15,6 @@ from data_fetcher import DataFetcher
 from indicator_engine import IndicatorEngine
 from quant_engine import QuantEngine
 from strategies import StrategyRunner
-from backtest_engine import BacktestEngine
 from signal_engine import STRATEGIES, SignalEngine
 
 app = FastAPI(
@@ -37,7 +36,7 @@ data_fetcher = DataFetcher()
 indicator_engine = IndicatorEngine()
 quant_engine = QuantEngine()
 strategy_runner = StrategyRunner()
-backtest_engine = BacktestEngine()
+# backtest_engine is a standalone CLI: run `python3 backtest_engine.py` directly
 signal_engine = SignalEngine()
 
 
@@ -193,14 +192,8 @@ class BacktestRequest(BaseModel):
 
 @app.post("/api/backtest")
 async def run_backtest(req: BacktestRequest):
-    """Run a full backtest with a named strategy."""
-    try:
-        df = await data_fetcher.fetch(req.symbol, req.interval, req.bars)
-        df = indicator_engine.compute_all(df)
-        result = backtest_engine.run(df, req.strategy, req.initial_cash, req.commission, req.params)
-        return {"symbol": req.symbol, "strategy": req.strategy, **result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Backtest is run via CLI: python3 backtest_engine.py"""
+    return {"status": "Use the CLI backtest engine directly: python3 backtest_engine.py"}
 
 
 # ─── Signal Endpoints ────────────────────────────────────────────────────────

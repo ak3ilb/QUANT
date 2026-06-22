@@ -14,9 +14,9 @@ from signal_engine import STRATEGIES, SignalEngine
 from data_vault import store_ohlcv, get_ohlcv
 from algorithms.candlestick_patterns import detect_candlestick_patterns
 
-SYMBOLS = ["BTCUSD"]
-TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD"}
-TIMEFRAMES = {"1h": "60"} # Only extract 1h since we upgraded our execution model
+SYMBOLS = ["BTCUSD", "XAUUSD"]
+TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD", "XAUUSD": "OANDA:XAUUSD"}
+TIMEFRAMES = {"1m": "1", "5m": "5", "15m": "15", "1h": "60", "4h": "240", "1d": "1D"}
 CDP_URL = "http://localhost:3001"
 
 async def fetch_and_store_live(symbol, tf_label, tv_tf):
@@ -43,10 +43,13 @@ async def fetch_and_store_live(symbol, tf_label, tv_tf):
             
             # Store all visible bars to ensure full data consistency and no gaps
             store_ohlcv(symbol, tf_label, df)
-            return True
+            
+            # Return live tick price directly from CDP (last bar = active candle)
+            live_price = float(df['close'].iloc[-1])
+            return True, live_price
     except Exception as e:
         print(f"Error fetching live for {symbol} {tf_label}: {e}", flush=True)
-    return False
+    return False, None
 
 loop_counter = 0
 
@@ -82,8 +85,16 @@ async def compute_matrix():
                 levels = existing_data.get("liquidity_levels", [])
                 
                 for tf_label, tv_tf in TIMEFRAMES.items():
-                    # Always fetch our primary trading timeframe to keep pricing live
-                    if tf_label == "1h":
+                    should_fetch = False
+                    live_price = None
+                    # Smart throttle: 1m/5m every cycle, slower TFs less often
+                    if tf_label in ["1m", "5m"]:
+                        should_fetch = True
+                    elif tf_label == "15m" and loop_counter % 3 == 0:
+                        should_fetch = True
+                    elif tf_label == "1h" and loop_counter % 6 == 0:
+                        should_fetch = True
+                    elif tf_label in ["4h", "1d"] and loop_counter % 24 == 0:
                         should_fetch = True
                         
                     # If we don't have this timeframe at all, force fetch it
@@ -95,7 +106,7 @@ async def compute_matrix():
                         continue
                         
                     print(f"[{datetime.now()}] Processing {symbol} - {tf_label}...", flush=True)
-                    await fetch_and_store_live(symbol, tf_label, tv_tf)
+                    fetch_ok, live_price = await fetch_and_store_live(symbol, tf_label, tv_tf)
                     
                     # After storing, calculate matrix as usual
                     try:
@@ -136,7 +147,8 @@ async def compute_matrix():
                             "hyper_instability": regime["hyper_instability"],
                             "sde_forecast": regime["sde_forecast"],
                             "cheeger_invariant": regime["cheeger_invariant"],
-                            "current_price": float(df['close'].iloc[-1]),
+                            # Use live_price from CDP if available — this is the real-time tick
+                            "current_price": live_price if live_price else float(df['close'].iloc[-1]),
                             "kernel_p_value": float(regime["kernel_p_value"]),
                             "kelly_recommended_pct": float(regime["kelly_recommended_pct"]),
                             "active_patterns": str(df['active_patterns'].iloc[-1]) if 'active_patterns' in df.columns else ""
@@ -168,8 +180,8 @@ async def compute_matrix():
                         os.remove(tmp_output_file)
                     print(f"Failed to write json for {symbol}: {e}", flush=True)
             
-            # Wait 30 seconds before re-calculating the 1h matrix to avoid browser spam
-            time.sleep(30)
+            # 30 second pause between full symbol scans
+            time.sleep(15)
             
         except Exception as e:
             print(f"Main Loop Error: {e}", flush=True)
