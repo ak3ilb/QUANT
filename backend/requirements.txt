@@ -10,3 +10,8 @@ Backtesting
 requests
 duckdb
 pandas-ta
+feedparser
+vaderSentiment
+transformers
+stockstats
+torch

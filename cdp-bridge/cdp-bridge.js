@@ -436,10 +436,15 @@ class TVDataExtractor {
 
   async extractHistory(options = {}) {
     return this.runExclusive(async () => {
-      const { symbol, resolution, maxBars, settleMs = 1500 } = options;
+      const { symbol, resolution, maxBars, settleMs } = options;
+      const jitterLow = 2000;
+      const jitterHigh = 4000;
+      const effectiveSettle = settleMs != null
+        ? Number(settleMs)
+        : jitterLow + Math.floor(Math.random() * (jitterHigh - jitterLow + 1));
       if (symbol) await this.changeSymbol(symbol);
       if (resolution) await this.changeTimeframe(resolution);
-      if (symbol || resolution) await this.sleep(Number(settleMs));
+      if (symbol || resolution) await this.sleep(effectiveSettle);
       if (symbol || resolution) {
         await this.waitForChartIdentity({ symbol, resolution });
       }
@@ -447,6 +452,24 @@ class TVDataExtractor {
         requestedSymbol: symbol || null,
         requestedResolution: resolution || null,
         maxBars,
+      });
+    });
+  }
+
+  // Lightweight last-bar read — switches chart only if identity mismatch
+  async extractLastBar(options = {}) {
+    return this.runExclusive(async () => {
+      const { symbol, resolution } = options;
+      if (symbol) await this.changeSymbol(symbol);
+      if (resolution) await this.changeTimeframe(resolution);
+      if (symbol || resolution) {
+        await this.sleep(800);
+        await this.waitForChartIdentity({ symbol, resolution, timeoutMs: 8000 });
+      }
+      return this.exportChartData({
+        requestedSymbol: symbol || null,
+        requestedResolution: resolution || null,
+        maxBars: 2,
       });
     });
   }
@@ -571,6 +594,19 @@ async function startServer() {
     }
   });
 
+  // Lightweight last 1-2 bars without heavy history pull
+  app.get('/extract/lastbar', async (req, res) => {
+    try {
+      const data = await extractor.extractLastBar({
+        symbol: req.query.symbol,
+        resolution: req.query.resolution,
+      });
+      res.json(data);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // Change symbol
   app.post('/control/symbol', async (req, res) => {
     const { symbol } = req.body;
@@ -634,6 +670,7 @@ async function startServer() {
     console.log('   GET  /extract/symbol   — Symbol info + price');
     console.log('   GET  /extract/prices   — Visible price levels');
     console.log('   GET  /extract/history  — Historical OHLCV bars');
+    console.log('   GET  /extract/lastbar  — Last 1-2 bars (lightweight)');
     console.log('   GET  /extract/state    — Chart state');
     console.log('   GET  /extract/apis     — Available APIs');
     console.log('   POST /control/symbol   — Change symbol');

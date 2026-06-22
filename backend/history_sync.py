@@ -4,6 +4,7 @@ import time
 import pandas as pd
 from datetime import datetime, timedelta
 from data_vault import store_ohlcv
+from cdp_lock import cdp_lock, jittered_settle_ms
 
 TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD", "XAUUSD": "OANDA:XAUUSD", "NIFTY": "NSE:NIFTY"}
 
@@ -33,16 +34,17 @@ class TradingViewHistorySyncer:
                     
                 # Extract Data
                 try:
-                    resp = requests.get(
-                        f"{self.cdp_url}/extract/history",
-                        params={
-                            "symbol": tv_symbol,
-                            "resolution": tv_tf,
-                            "maxBars": 5000,
-                            "settleMs": 2000,
-                        },
-                        timeout=30,
-                    )
+                    with cdp_lock():
+                        resp = requests.get(
+                            f"{self.cdp_url}/extract/history",
+                            params={
+                                "symbol": tv_symbol,
+                                "resolution": tv_tf,
+                                "maxBars": 5000,
+                                "settleMs": jittered_settle_ms(2000, 4000),
+                            },
+                            timeout=30,
+                        )
                     data = resp.json()
                     
                     if data.get("actualSymbol") != tv_symbol:

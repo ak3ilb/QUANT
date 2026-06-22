@@ -1,0 +1,7 @@
+# FinRL DRL stack (optional — supervised ML uses backend/requirements.txt)
+gymnasium>=0.29.0
+stable-baselines3>=2.2.0
+stockstats>=0.6.0
+ccxt>=4.0.0
+tensorboard>=2.14.0
+shimmy>=1.3.0

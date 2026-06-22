@@ -136,7 +136,7 @@ def run_backtest(symbol="BTCUSD", tf="5m"):
             action = medallion_signal.get("action", "HOLD")
             confidence = medallion_signal.get("confidence", 0.5)
                 
-            if action in ["BUY", "SELL"] and confidence >= 0.85:
+            if action in ["BUY", "SELL"] and confidence >= 0.75:
                 if (action == "BUY" and sde_forecast > current_price) or (action == "SELL" and sde_forecast < current_price):
                     margin_usd, leveraged_size_usd, qty, entry_fee = risk_manager.calculate_position_size(
                         balance, raw_kelly, symbol, current_price

@@ -19,12 +19,11 @@ const SemicircleGauge = ({ value, label, tf }: { value: number, label: string, t
   const angle = (value * 180) - 90;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px' }}>
-      <div style={{ fontWeight: 'bold', marginBottom: '10px', color: '#111827', letterSpacing: '1px' }}>{tf.toUpperCase()}</div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '4px' }}>
+      <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#111827', letterSpacing: '1px', fontSize: 12 }}>{tf.toUpperCase()}</div>
       
-      <div style={{ position: 'relative', width: '100px', height: '55px', display: 'flex', justifyContent: 'center' }}>
-        {/* Background Arc */}
-        <svg width="100" height="50" style={{ position: 'absolute', top: 0, overflow: 'visible' }}>
+      <div style={{ position: 'relative', width: '88px', height: '48px', display: 'flex', justifyContent: 'center' }}>
+        <svg width="88" height="44" style={{ position: 'absolute', top: 0, overflow: 'visible' }}>
           <path
             d="M 10 50 A 40 40 0 0 1 90 50"
             fill="none"
@@ -71,10 +70,10 @@ const SemicircleGauge = ({ value, label, tf }: { value: number, label: string, t
         }} />
       </div>
 
-      <div style={{ marginTop: '15px', color: color, fontWeight: 'bold', fontSize: '14px' }}>
+      <div style={{ marginTop: '8px', color: color, fontWeight: 'bold', fontSize: '12px' }}>
         {label}
       </div>
-      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>
+      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>
         {(value * 100).toFixed(1)}% Bull
       </div>
     </div>
@@ -91,15 +90,15 @@ export default function SpeedometerGrid({ matrixData }: { matrixData: any }) {
   return (
     <div style={{ 
       display: 'grid', 
-      gridTemplateColumns: 'repeat(3, 1fr)', 
-      gap: '20px',
-      padding: '20px',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', 
+      gap: '8px',
+      padding: '8px',
       height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignContent: 'start',
       background: '#f9fafb',
       border: '1px solid #e5e7eb',
-      borderRadius: '12px'
+      borderRadius: '12px',
+      overflow: 'auto',
     }}>
       {timeframes.map(tf => {
         // Use Medallion bayesian_prob_bull for the gauge

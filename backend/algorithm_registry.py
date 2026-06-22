@@ -90,8 +90,93 @@ ALGORITHM_REGISTRY = [
         ],
         "caveat": (
             "The source references stochastic differential equations broadly. "
-            "This code implements a GBM forecast, not an Ornstein-Uhlenbeck "
-            "mean-reversion process and not a proprietary Renaissance model."
+            "This code implements a GBM forecast. Trading paths use the separate "
+            "Ornstein-Uhlenbeck mean-reversion model."
+        ),
+    },
+    {
+        "id": "ornstein_uhlenbeck_sde",
+        "name": "Ornstein-Uhlenbeck Monte Carlo",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.stochastic_diff_eq",
+        "implementation_status": "implemented_model",
+        "source_urls": [
+            "https://www.quantvps.com/blog/jim-simons-trading-strategy",
+        ],
+        "caveat": (
+            "Mean-reversion SDE used for live sde_forecast targets in paper trading."
+        ),
+    },
+    {
+        "id": "logistic_scorer",
+        "name": "Walk-Forward Logistic Signal Scorer",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.logistic_scorer",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": (
+            "Rolling logistic regression over engineered features; replaces "
+            "fixed-rule Bayesian bumps in signal_engine."
+        ),
+    },
+    {
+        "id": "signed_volume_imbalance",
+        "name": "Signed Volume Order-Flow Proxy",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.signed_volume",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": "OHLCV proxy for buy/sell pressure without L2 order book data.",
+    },
+    {
+        "id": "bocpd_break",
+        "name": "Bayesian Online Changepoint Detection",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.bocpd",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": "Replaces Ax-Kochen variance-ratio for structural break detection.",
+    },
+    {
+        "id": "kalman_fair_value",
+        "name": "Kalman Fair-Value Filter",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.kalman_fair_value",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": "1D Kalman fair value and innovation z-score for mean-reversion entries.",
+    },
+    {
+        "id": "engle_granger_spread",
+        "name": "Engle-Granger Cointegration Spread",
+        "category": QUANT_MODEL,
+        "module": "backend.algorithms.cointegration",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": "BTC/XAU spread z-score for cross-asset stat-arb imbalance.",
+    },
+    {
+        "id": "learning_engine",
+        "name": "Continuous Learning Engine",
+        "category": QUANT_MODEL,
+        "module": "backend.learning_engine",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": (
+            "Thompson sampling strategy ensemble, online logistic updates from "
+            "closed trades, Page-Hinkley drift detection, walk-forward promotion gate."
+        ),
+    },
+    {
+        "id": "intelligence_layer",
+        "name": "Intelligence Context Layer",
+        "category": QUANT_MODEL,
+        "module": "backend.intelligence.context_builder",
+        "implementation_status": "implemented_model",
+        "source_urls": [],
+        "caveat": (
+            "Multi-source price validation, session/calendar/macro context, "
+            "RSS news with FinBERT+VADER sentiment for BTC and XAU."
         ),
     },
     {
@@ -136,8 +221,8 @@ ALGORITHM_REGISTRY = [
         ],
         "caveat": (
             "The source supports Kelly-style sizing in the Renaissance story. "
-            "This implementation uses a fixed 50.75% win-rate assumption and "
-            "historical average win/loss ratio."
+            "Win rate is read from closed paper_ledger trades when available; "
+            "otherwise a 50.75% default is used."
         ),
     },
     {

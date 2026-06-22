@@ -2,6 +2,7 @@
   max-width: 1800px;
   margin: 0 auto;
   padding: 24px;
+  overflow-x: hidden;
 }
 
 .header {
@@ -56,18 +57,28 @@
 
 .topRow {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
-  height: 450px;
+  align-items: stretch;
+}
+
+.topRow .glassPanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  max-height: 480px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .glassPanel {
   background: var(--panel-bg);
-  border: 2px solid var(--panel-border);
+  border: 1px solid var(--panel-border);
   border-radius: 0.75rem;
   padding: 20px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .glassPanel:hover {
@@ -81,6 +92,7 @@
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
 }
 
 .panelTitle {
@@ -95,7 +107,73 @@
 
 .chartContainer {
   flex: 1;
-  height: calc(100% - 40px);
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Intelligence layer */
+.intelligenceTop {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.intelligenceCard {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.intelligenceCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.intelligenceNewsWrap {
+  min-width: 0;
+}
+
+.newsSplit {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  min-width: 0;
+}
+
+.newsSplitWithDetail {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+}
+
+.newsList {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.newsDetail {
+  min-width: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+@media (max-width: 960px) {
+  .newsSplitWithDetail {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Command Center Grid */
@@ -215,9 +293,9 @@
 
 /* Paper Trader Styles */
 .lowerRow {
-  margin-top: 2rem;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .paperHeader {
@@ -252,6 +330,51 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .topRow {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .topRow .glassPanel {
+    max-height: none;
+    min-height: 300px;
+  }
+
+  .intelligenceTop {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .intelligenceTop > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .paperContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .intelligenceTop {
+    grid-template-columns: 1fr;
+  }
+
+  .matrixGrid {
+    grid-template-columns: 120px repeat(6, minmax(100px, 1fr));
+  }
 }
 
 .subTitle {
@@ -321,4 +444,82 @@
   text-align: center;
   border: 1px dashed var(--border-color);
   border-radius: 8px;
+}
+
+.panel {
+  width: 100%;
+}
+
+.loading {
+  color: var(--text-tertiary);
+  padding: 2rem;
+  text-align: center;
+  font-style: italic;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--danger);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.summaryBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summaryValue {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.ledgerDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.ledgerMeta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.ledgerPnl {
+  text-align: right;
+  font-weight: 700;
+  min-width: 100px;
+}
+
+.reasonBadge {
+  background: #f3f4f6;
+  border: 1px solid var(--border-color);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
 }
