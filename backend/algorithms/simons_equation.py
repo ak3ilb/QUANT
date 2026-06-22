@@ -3,11 +3,19 @@ import pandas as pd
 
 def simons_hypersurface(df: pd.DataFrame) -> dict:
     """
-    Simons' Equation for Minimal Hypersurfaces applied to Market Microstructure
-    |A| * Delta(|A|) + |A|^4 = (2/n)*|Grad(|A|)|^2 + n*c*|A|^2
+    Volatility instability heuristic inspired by Simons' formula.
+
+    Simons' formula is about the Laplacian of the second fundamental form of
+    minimal submanifolds. This function does not model a minimal hypersurface;
+    it maps rolling volatility and its derivatives into a market instability
+    proxy with similar symbolic structure.
     """
     if len(df) < 30:
-        return {"instability_detected": False, "laplacian": 0.0}
+        return {
+            "instability_detected": False,
+            "laplacian": 0.0,
+            "model_status": "heuristic_analogy",
+        }
         
     # Let |A| (second fundamental form) be rolling volatility
     A_norm = df['close'].rolling(5).std().fillna(0).values
@@ -34,5 +42,6 @@ def simons_hypersurface(df: pd.DataFrame) -> dict:
     return {
         "laplacian": float(np.mean(laplacian_A[-5:])),
         "lhs_rhs_deviation": float(current_dev),
-        "instability_detected": is_instable
+        "instability_detected": is_instable,
+        "model_status": "heuristic_analogy",
     }

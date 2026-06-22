@@ -13,7 +13,7 @@ class HMMBaumWelch:
         returns = df['close'].pct_change().dropna().values.reshape(-1, 1)
         
         try:
-            model = hmm.GaussianHMM(n_components=3, covariance_type="full", n_iter=100, random_state=42)
+            model = hmm.GaussianHMM(n_components=3, covariance_type="full", n_iter=30, random_state=42)
             model.fit(returns)
             self.hmm_model = model
             

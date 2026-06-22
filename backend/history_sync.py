@@ -1,68 +1,104 @@
-import ccxt
+import requests
+import os
 import time
 import pandas as pd
 from datetime import datetime, timedelta
-import asyncio
 from data_vault import store_ohlcv
 
-class HistorySyncer:
-    def __init__(self, symbol="BTC/USDT", exchange_id="kraken"):
-        self.exchange = getattr(ccxt, exchange_id)({
-            'enableRateLimit': True,
-        })
-        self.symbol = symbol
+TV_SYMBOLS = {"BTCUSD": "BINANCE:BTCUSD", "XAUUSD": "OANDA:XAUUSD", "NIFTY": "NSE:NIFTY"}
 
-    def sync_timeframe(self, timeframe="1m", years=1):
-        print(f"Starting deep historical sync for {self.symbol} ({timeframe}) - {years} year(s)")
+class TradingViewHistorySyncer:
+    def __init__(self, cdp_url="http://localhost:3001"):
+        self.cdp_url = cdp_url
+        self.symbols = ["BTCUSD", "XAUUSD", "NIFTY"]
+        self.timeframes = {
+            "1m": "1",
+            "3m": "3",
+            "5m": "5",
+            "15m": "15",
+            "1h": "60",
+            "4h": "240",
+            "1d": "1D"
+        }
         
-        # Calculate timestamps
-        end_time = self.exchange.milliseconds()
-        start_time = end_time - int(years * 365 * 24 * 60 * 60 * 1000)
+    def sync_all(self):
+        print(f"[{datetime.now()}] Starting TV History Sync for {self.symbols}")
         
-        current_since = start_time
-        total_fetched = 0
-        
-        while current_since < end_time:
-            try:
-                # Fetch up to 720 candles (Kraken max)
-                ohlcv = self.exchange.fetch_ohlcv(self.symbol, timeframe, since=current_since, limit=720)
-                if not ohlcv:
-                    break
+        for symbol in self.symbols:
+            print(f"\n--- Syncing {symbol} ---")
+            tv_symbol = TV_SYMBOLS.get(symbol, symbol)
+                
+            for tf_label, tv_tf in self.timeframes.items():
+                print(f"  -> Extracting {tf_label}...")
                     
-                # Convert to DataFrame
-                df = pd.DataFrame(ohlcv, columns=['time', 'open', 'high', 'low', 'close', 'volume'])
-                df['time'] = pd.to_datetime(df['time'], unit='ms')
-                
-                # Store in DuckDB
-                # Mapping BTC/USDT to BTCUSD for internal consistency
-                internal_symbol = self.symbol.replace("/", "").replace("USDT", "USD")
-                store_ohlcv(internal_symbol, timeframe, df)
-                
-                total_fetched += len(df)
-                
-                # Update current_since for next pagination (add 1 millisecond to avoid duplicate)
-                current_since = ohlcv[-1][0] + 1
-                
-                # Print progress
-                current_date = datetime.fromtimestamp(ohlcv[-1][0]/1000).strftime('%Y-%m-%d')
-                print(f"[{timeframe}] Fetched {len(df)} bars. Progress: {current_date}. Total: {total_fetched}")
-                
-                # Minimal sleep to respect rate limits
-                time.sleep(self.exchange.rateLimit / 1000)
-                
-            except Exception as e:
-                print(f"Error fetching data: {e}")
-                time.sleep(5) # Backoff
-                
-        print(f"Sync complete for {timeframe}. Total bars fetched: {total_fetched}")
+                # Extract Data
+                try:
+                    resp = requests.get(
+                        f"{self.cdp_url}/extract/history",
+                        params={
+                            "symbol": tv_symbol,
+                            "resolution": tv_tf,
+                            "maxBars": 5000,
+                            "settleMs": 2000,
+                        },
+                        timeout=30,
+                    )
+                    data = resp.json()
+                    
+                    if data.get("actualSymbol") != tv_symbol:
+                        print(f"     ❌ Symbol mismatch: requested {tv_symbol}, got {data.get('actualSymbol')}")
+                        continue
+                    if data.get("actualResolution") != tv_tf:
+                        print(f"     ❌ Timeframe mismatch: requested {tv_tf}, got {data.get('actualResolution')}")
+                        continue
+                    
+                    if 'bars' in data and len(data['bars']) > 0:
+                        df = pd.DataFrame(data['bars'])
+                        # TradingView returns timestamps in seconds or ms. Usually seconds if from bar time.
+                        # Wait, the CDP script might return unix time. Let's check magnitude.
+                        if df['time'].iloc[-1] > 20000000000:
+                            # It's ms
+                            df['time'] = pd.to_datetime(df['time'], unit='ms')
+                        else:
+                            # It's seconds
+                            df['time'] = pd.to_datetime(df['time'], unit='s')
+                        df.attrs["source"] = data.get("source", "tradingview_cdp")
+                        df.attrs["actual_symbol"] = data.get("actualSymbol")
+                        df.attrs["actual_resolution"] = data.get("actualResolution")
+                        df.attrs["extracted_at"] = data.get("extractedAt")
+                            
+                        # Store in Vault
+                        store_ohlcv(symbol, tf_label, df)
+                        print(f"     ✅ Stored {len(df)} bars for {symbol} {tf_label} ({data.get('firstTime')} -> {data.get('lastTime')})")
+                    else:
+                        print(f"     ❌ No bars returned: {data}")
+                        
+                except Exception as e:
+                    print(f"     ❌ Error extracting {tf_label}: {e}")
+                    
+        print("\nSync cycle complete!")
+
+def run_sync_loop():
+    syncer = TradingViewHistorySyncer()
+    
+    while True:
+        try:
+            # Create lock file to pause matrix_worker
+            with open("/tmp/history_sync.lock", "w") as f:
+                f.write("locked")
+            
+            syncer.sync_all()
+            
+        except Exception as e:
+            print(f"Critical sync error: {e}")
+        finally:
+            # Remove lock file when done
+            if os.path.exists("/tmp/history_sync.lock"):
+                os.remove("/tmp/history_sync.lock")
+            
+        # Run every 4 hours (14400 seconds)
+        print(f"[{datetime.now()}] Sleeping for 4 hours...")
+        time.sleep(14400)
 
 if __name__ == "__main__":
-    syncer = HistorySyncer(symbol="BTC/USDT")
-    
-    # The user requested exactly 3 months of data (0.25 years) for all timeframes
-    syncer.sync_timeframe("1m", years=0.25)
-    syncer.sync_timeframe("5m", years=0.25) 
-    syncer.sync_timeframe("15m", years=0.25)
-    syncer.sync_timeframe("1h", years=0.25)
-    syncer.sync_timeframe("4h", years=0.25)
-    syncer.sync_timeframe("1d", years=0.25)
+    run_sync_loop()

@@ -3,7 +3,7 @@ import pandas as pd
 from algorithms.hmm_baum_welch import HMMBaumWelch
 from algorithms.kelly_criterion import kelly_sizing
 from algorithms.kernel_regression import kernel_regression
-from algorithms.stochastic_diff_eq import ornstein_uhlenbeck_sde
+from algorithms.stochastic_diff_eq import geometric_brownian_motion_sde
 from algorithms.markov_chains import markov_analysis
 from algorithms.berlekamp_massey import berlekamp_massey
 from algorithms.chern_simons import chern_simons_gauge
@@ -25,8 +25,23 @@ class QuantEngine:
     def kernel_regression(self, df: pd.DataFrame) -> dict:
         return kernel_regression(df)
 
-    def monte_carlo(self, df: pd.DataFrame, simulations: int = 1000, forecast_bars: int = 30) -> dict:
-        return ornstein_uhlenbeck_sde(df, simulations, forecast_bars)
+    def monte_carlo(
+        self,
+        df: pd.DataFrame,
+        simulations: int = 1000,
+        forecast_bars: int = 30,
+        seed: int | None = None,
+    ) -> dict:
+        return self.geometric_brownian_motion(df, simulations, forecast_bars, seed)
+
+    def geometric_brownian_motion(
+        self,
+        df: pd.DataFrame,
+        simulations: int = 1000,
+        forecast_bars: int = 30,
+        seed: int | None = None,
+    ) -> dict:
+        return geometric_brownian_motion_sde(df, simulations, forecast_bars, seed)
 
     def markov_analysis(self, df: pd.DataFrame) -> dict:
         return markov_analysis(df)

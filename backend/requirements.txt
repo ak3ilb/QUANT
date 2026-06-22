@@ -8,3 +8,5 @@ scikit-learn
 hmmlearn
 Backtesting
 requests
+duckdb
+pandas-ta

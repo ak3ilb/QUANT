@@ -32,20 +32,27 @@ export default function PredictionPanel({ matrixData }: { matrixData: any }) {
             borderRadius: '8px',
             borderLeft: `3px solid ${color}`
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '30%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '20%' }}>
               <span style={{ fontWeight: 'bold', color: '#111827' }}>{tf.toUpperCase()}</span>
               {isUp ? <TrendingUp size={16} color={color} /> : <TrendingDown size={16} color={color} />}
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '40%' }}>
-              <span style={{ fontSize: '11px', color: '#6b7280' }}>Target (SDE)</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '25%' }}>
+              <span style={{ fontSize: '11px', color: '#6b7280' }}>Target</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 'bold', color: '#111827' }}>
                 ${target.toFixed(2)}
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '30%' }}>
-              <span style={{ fontSize: '11px', color: '#6b7280' }}>Expected Move</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '35%' }}>
+              <span style={{ fontSize: '11px', color: '#6b7280' }}>Candlestick Pattern</span>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: data.active_patterns ? '#4f46e5' : '#9ca3af', textAlign: 'center' }}>
+                {data.active_patterns ? data.active_patterns.split(',').map((p: string) => p.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ') : 'None'}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', width: '20%' }}>
+              <span style={{ fontSize: '11px', color: '#6b7280' }}>Expected</span>
               <span style={{ fontWeight: 'bold', color: color }}>
                 {isUp ? '+' : ''}{percentMove.toFixed(3)}%
               </span>

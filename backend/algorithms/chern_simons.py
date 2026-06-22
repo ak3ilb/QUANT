@@ -2,10 +2,25 @@ import numpy as np
 import pandas as pd
 
 def chern_simons_gauge(df: pd.DataFrame) -> dict:
+    """
+    Market curvature heuristic inspired by Chern-Simons forms.
+
+    The cited Chern-Simons sources concern connection 1-forms and curvature
+    forms on manifolds. Here, close-to-close returns are used only as a
+    practical proxy for local market curvature.
+    """
     if len(df) < 20:
-        return {"cs_1d": 0.0, "cs_3d": 0.0, "cs_5d": 0.0, "curvature_signal": "HOLD"}
+        return {
+            "cs_1d": 0.0,
+            "cs_3d": 0.0,
+            "cs_5d": 0.0,
+            "curvature_value": 0.0,
+            "curvature_signal": "HOLD",
+            "model_status": "heuristic_analogy",
+        }
         
-    A = df['close'].pct_change().fillna(0).values
+    A = df['close'].pct_change().replace([np.inf, -np.inf], np.nan).fillna(0).values
+    A = np.clip(A, -0.05, 0.05)
     dA = np.diff(A, prepend=0)
     
     # 1D Form: A mod Z (We'll use modulo 1 for fractional part proxy)
@@ -26,5 +41,7 @@ def chern_simons_gauge(df: pd.DataFrame) -> dict:
         "cs_1d": float(cs_1d),
         "cs_3d": float(cs_3d),
         "cs_5d": float(cs_5d),
-        "curvature_signal": signal
+        "curvature_value": float(cs_5d),
+        "curvature_signal": signal,
+        "model_status": "heuristic_analogy",
     }

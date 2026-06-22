@@ -32,15 +32,31 @@ def init_db():
             low DOUBLE,
             close DOUBLE,
             volume DOUBLE,
+            active_patterns VARCHAR,
+            source VARCHAR,
+            actual_symbol VARCHAR,
+            actual_resolution VARCHAR,
+            extracted_at TIMESTAMP,
             PRIMARY KEY (symbol, interval, time)
         )
     ''')
+    for column_name, column_type in [
+        ("active_patterns", "VARCHAR"),
+        ("source", "VARCHAR"),
+        ("actual_symbol", "VARCHAR"),
+        ("actual_resolution", "VARCHAR"),
+        ("extracted_at", "TIMESTAMP"),
+    ]:
+        try:
+            conn.execute(f'ALTER TABLE market_data ADD COLUMN {column_name} {column_type}')
+        except Exception:
+            pass # Column already exists
     conn.close()
 
 def store_ohlcv(symbol: str, interval: str, df: pd.DataFrame):
     """
     Ingest a pandas DataFrame into DuckDB.
-    Expected columns: time, open, high, low, close, volume.
+    Expected columns: time, open, high, low, close, volume, [active_patterns].
     """
     if df.empty:
         return
@@ -56,15 +72,44 @@ def store_ohlcv(symbol: str, interval: str, df: pd.DataFrame):
     df['symbol'] = symbol
     df['interval'] = interval
     
+    if 'active_patterns' not in df.columns:
+        df['active_patterns'] = ''
+    if 'source' not in df.columns:
+        df['source'] = df.attrs.get('source', 'unknown')
+    if 'actual_symbol' not in df.columns:
+        df['actual_symbol'] = df.attrs.get('actual_symbol', symbol)
+    if 'actual_resolution' not in df.columns:
+        df['actual_resolution'] = df.attrs.get('actual_resolution', interval)
+    if 'extracted_at' not in df.columns:
+        extracted_at = df.attrs.get('extracted_at')
+        df['extracted_at'] = pd.to_datetime(extracted_at, unit='ms') if extracted_at else pd.Timestamp.utcnow()
+        
     # Ensure types
     df['time'] = pd.to_datetime(df['time'])
+    df['extracted_at'] = pd.to_datetime(df['extracted_at'])
     
     conn = get_connection()
-    # Use DuckDB's fast INSERT OR IGNORE via pandas
+    # Use DuckDB's ON CONFLICT DO UPDATE to ensure live candles are actually updated
     conn.execute('''
-        INSERT OR IGNORE INTO market_data 
-        SELECT symbol, interval, time, open, high, low, close, volume 
+        INSERT INTO market_data (
+            symbol, interval, time, open, high, low, close, volume, active_patterns,
+            source, actual_symbol, actual_resolution, extracted_at
+        )
+        SELECT
+            symbol, interval, time, open, high, low, close, volume, active_patterns,
+            source, actual_symbol, actual_resolution, extracted_at
         FROM df
+        ON CONFLICT (symbol, interval, time) DO UPDATE SET
+            open = EXCLUDED.open,
+            high = EXCLUDED.high,
+            low = EXCLUDED.low,
+            close = EXCLUDED.close,
+            volume = EXCLUDED.volume,
+            active_patterns = EXCLUDED.active_patterns,
+            source = EXCLUDED.source,
+            actual_symbol = EXCLUDED.actual_symbol,
+            actual_resolution = EXCLUDED.actual_resolution,
+            extracted_at = EXCLUDED.extracted_at
     ''')
     conn.close()
 
@@ -74,7 +119,7 @@ def get_ohlcv(symbol: str, interval: str, bars: int = 1000) -> pd.DataFrame:
     """
     conn = get_connection(read_only=True)
     df = conn.execute(f'''
-        SELECT time, open, high, low, close, volume 
+        SELECT time, open, high, low, close, volume, active_patterns, source, actual_symbol, actual_resolution, extracted_at
         FROM market_data 
         WHERE symbol = ? AND interval = ? 
         ORDER BY time DESC 

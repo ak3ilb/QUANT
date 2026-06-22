@@ -35,9 +35,10 @@ class IndicatorEngine:
         df['returns'] = df['close'].pct_change()
         df['log_returns'] = df['close'].pct_change().apply(lambda x: np.log(1+x) if not pd.isna(x) else np.nan)
         df['volatility_20'] = df['returns'].rolling(window=20).std()
-        
-        return df.dropna(subset=['EMA_50', 'RSI_14'])
-
+        # Forward fill and backward fill instead of dropping, to ensure we don't return empty dataframes
+        # on smaller timeframes or lower lookbacks.
+        df = df.bfill().ffill()
+        return df
     def compute_selected(self, df: pd.DataFrame, indicators: list) -> pd.DataFrame:
         """Compute only selected indicators."""
         df = df.copy()

@@ -157,11 +157,68 @@ class CDPConnection {
 class TVDataExtractor {
   constructor(cdp) {
     this.cdp = cdp;
+    this.operationQueue = Promise.resolve();
   }
 
   // Ensure connected
   async ensureConnected() {
     if (!this.cdp.connected) await this.cdp.connect();
+  }
+
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Serialize chart mutations so concurrent callers cannot cross-wire symbol/timeframe.
+  async runExclusive(operation) {
+    const previous = this.operationQueue;
+    let release;
+    this.operationQueue = new Promise((resolve) => {
+      release = resolve;
+    });
+
+    await previous.catch(() => {});
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  }
+
+  async getActiveChartIdentity() {
+    await this.ensureConnected();
+    return this.cdp.evaluateJSON(`
+      (function() {
+        try {
+          const col = _exposed_chartWidgetCollection;
+          const widget = col.activeChartWidget?.value?.() || col.getAll?.()[0];
+          return JSON.stringify({
+            symbol: widget?.getSymbol ? widget.getSymbol() : null,
+            resolution: widget?.getResolution ? widget.getResolution() : null,
+            hasModel: widget?.hasModel ? widget.hasModel() : !!widget?.model
+          });
+        } catch(e) {
+          return JSON.stringify({ error: e.message });
+        }
+      })()
+    `);
+  }
+
+  async waitForChartIdentity({ symbol, resolution, timeoutMs = 12000, pollMs = 500 } = {}) {
+    const deadline = Date.now() + timeoutMs;
+    let lastState = null;
+
+    while (Date.now() < deadline) {
+      lastState = await this.getActiveChartIdentity();
+      const symbolOk = !symbol || lastState.symbol === symbol;
+      const resolutionOk = !resolution || lastState.resolution === resolution;
+      if (symbolOk && resolutionOk) return lastState;
+      await this.sleep(pollMs);
+    }
+
+    throw new Error(
+      `TradingView chart did not reach requested state. requested=${JSON.stringify({ symbol, resolution })} actual=${JSON.stringify(lastState)}`
+    );
   }
 
   // Extract current OHLCV + metadata from the chart legend
@@ -254,13 +311,15 @@ class TVDataExtractor {
   // Change the chart symbol
   async changeSymbol(symbol) {
     await this.ensureConnected();
+    const safeSymbol = JSON.stringify(symbol);
     return this.cdp.evaluateJSON(`
       (function() {
         try {
+          const symbol = ${safeSymbol};
           const col = _exposed_chartWidgetCollection;
           if (col && col.setSymbol) {
-            col.setSymbol('${symbol}');
-            return JSON.stringify({ success: true, symbol: '${symbol}' });
+            col.setSymbol(symbol);
+            return JSON.stringify({ success: true, symbol });
           }
           return JSON.stringify({ success: false, error: 'setSymbol not available' });
         } catch(e) {
@@ -273,13 +332,15 @@ class TVDataExtractor {
   // Change the chart timeframe/resolution
   async changeTimeframe(resolution) {
     await this.ensureConnected();
+    const safeResolution = JSON.stringify(resolution);
     return this.cdp.evaluateJSON(`
       (function() {
         try {
+          const resolution = ${safeResolution};
           const col = _exposed_chartWidgetCollection;
           if (col && col.setResolution) {
-            col.setResolution('${resolution}');
-            return JSON.stringify({ success: true, resolution: '${resolution}' });
+            col.setResolution(resolution);
+            return JSON.stringify({ success: true, resolution });
           }
           return JSON.stringify({ success: false, error: 'setResolution not available' });
         } catch(e) {
@@ -290,13 +351,19 @@ class TVDataExtractor {
   }
 
   // Export full chart data (historical OHLCV) via the widget collection
-  async exportChartData() {
+  async exportChartData(options = {}) {
     await this.ensureConnected();
+    const maxBars = Number.isFinite(Number(options.maxBars)) ? Math.max(1, Math.min(Number(options.maxBars), 20000)) : 5000;
+    const requestedSymbol = options.requestedSymbol || null;
+    const requestedResolution = options.requestedResolution || null;
     return this.cdp.evaluateJSON(`
       new Promise((resolve) => {
         try {
+          const requestedSymbol = ${JSON.stringify(requestedSymbol)};
+          const requestedResolution = ${JSON.stringify(requestedResolution)};
+          const maxBars = ${maxBars};
           const col = _exposed_chartWidgetCollection;
-          const widget = col.activeChartWidget || col.getAll()[0];
+          const widget = col.activeChartWidget?.value?.() || col.getAll?.()[0];
           if (!widget) {
             resolve(JSON.stringify({ error: 'No active chart widget' }));
             return;
@@ -313,8 +380,9 @@ class TVDataExtractor {
               // Try to iterate the bars
               const first = barsObj.firstIndex ? barsObj.firstIndex() : 0;
               const last = barsObj.lastIndex ? barsObj.lastIndex() : barsObj.size() - 1;
+              const start = Math.max(first, last - maxBars + 1);
               
-              for (let i = first; i <= last && data.length < 5000; i++) {
+              for (let i = start; i <= last; i++) {
                 const bar = barsObj.valueAt ? barsObj.valueAt(i) : null;
                 if (bar) {
                   data.push({
@@ -328,11 +396,25 @@ class TVDataExtractor {
                 }
               }
             }
+
+            const actualSymbol = widget.getSymbol ? widget.getSymbol() : null;
+            const actualResolution = widget.getResolution ? widget.getResolution() : null;
+            const firstBar = data[0] || null;
+            const lastBar = data[data.length - 1] || null;
             
             resolve(JSON.stringify({ 
               bars: data, 
               count: data.length,
-              source: 'mainSeries.bars'
+              source: 'mainSeries.bars',
+              requestedSymbol,
+              requestedResolution,
+              actualSymbol,
+              actualResolution,
+              firstTime: firstBar ? firstBar.time : null,
+              lastTime: lastBar ? lastBar.time : null,
+              extractedAt: Date.now(),
+              symbolMatches: requestedSymbol ? actualSymbol === requestedSymbol : null,
+              resolutionMatches: requestedResolution ? actualResolution === requestedResolution : null
             }));
           } else {
             // Fallback: try exportData on active chart widget methods
@@ -352,6 +434,23 @@ class TVDataExtractor {
     `, true);
   }
 
+  async extractHistory(options = {}) {
+    return this.runExclusive(async () => {
+      const { symbol, resolution, maxBars, settleMs = 1500 } = options;
+      if (symbol) await this.changeSymbol(symbol);
+      if (resolution) await this.changeTimeframe(resolution);
+      if (symbol || resolution) await this.sleep(Number(settleMs));
+      if (symbol || resolution) {
+        await this.waitForChartIdentity({ symbol, resolution });
+      }
+      return this.exportChartData({
+        requestedSymbol: symbol || null,
+        requestedResolution: resolution || null,
+        maxBars,
+      });
+    });
+  }
+
   // Take a screenshot of the chart
   async takeScreenshot() {
     await this.ensureConnected();
@@ -369,14 +468,15 @@ class TVDataExtractor {
       (function() {
         try {
           const col = _exposed_chartWidgetCollection;
-          const state = col.state ? col.state() : null;
+          const widget = col.activeChartWidget?.value?.() || col.getAll?.()[0];
           const widgets = col.getAll ? col.getAll() : [];
           
           return JSON.stringify({
             widgetCount: widgets.length,
             layoutType: col._layoutType,
-            hasState: !!state,
-            stateKeys: state ? Object.keys(state).slice(0, 20) : [],
+            activeSymbol: widget?.getSymbol ? widget.getSymbol() : null,
+            activeResolution: widget?.getResolution ? widget.getResolution() : null,
+            hasModel: widget?.hasModel ? widget.hasModel() : !!widget?.model,
           });
         } catch(e) {
           return JSON.stringify({ error: e.message });
@@ -459,7 +559,12 @@ async function startServer() {
   // Export full chart data (historical OHLCV)
   app.get('/extract/history', async (req, res) => {
     try {
-      const data = await extractor.exportChartData();
+      const data = await extractor.extractHistory({
+        symbol: req.query.symbol,
+        resolution: req.query.resolution,
+        maxBars: req.query.maxBars,
+        settleMs: req.query.settleMs,
+      });
       res.json(data);
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -471,7 +576,7 @@ async function startServer() {
     const { symbol } = req.body;
     if (!symbol) return res.status(400).json({ error: 'symbol is required' });
     try {
-      const result = await extractor.changeSymbol(symbol);
+      const result = await extractor.runExclusive(() => extractor.changeSymbol(symbol));
       res.json(result);
     } catch (e) {
       res.status(500).json({ error: e.message });
@@ -483,7 +588,7 @@ async function startServer() {
     const { resolution } = req.body;
     if (!resolution) return res.status(400).json({ error: 'resolution is required (e.g., "1", "5", "60", "D", "W")' });
     try {
-      const result = await extractor.changeTimeframe(resolution);
+      const result = await extractor.runExclusive(() => extractor.changeTimeframe(resolution));
       res.json(result);
     } catch (e) {
       res.status(500).json({ error: e.message });
